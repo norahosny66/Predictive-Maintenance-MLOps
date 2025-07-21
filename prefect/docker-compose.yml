@@ -29,9 +29,8 @@ services:
     depends_on:
       - database
   prefect-agent:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: prefect_image
+    restart: always
     environment:
       - PREFECT_API_URL=http://orion:4200/api
     volumes:

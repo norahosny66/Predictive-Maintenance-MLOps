@@ -11,19 +11,19 @@ FILES_TO_DRIFT = 10  # Number of files per test set for PoC
 DRIFT_TYPE = "mean_shift"  # Options: "mean_shift", "gaussian_noise", "feature_dropout"
 
 # === DRIFT PARAMETERS ===
-MEAN_SHIFT = 0.5
-NOISE_STD = 0.2
-DROPOUT_RATE = 0.3
+MEAN_SHIFT = 10.0
+NOISE_STD = 5.0
+DROPOUT_RATE = 0.5
 
 # === DRIFT METHODS ===
-def apply_mean_shift(df, shift=0.5):
+def apply_mean_shift(df, shift=MEAN_SHIFT):
     return df + shift
 
-def apply_gaussian_noise(df, std=0.2):
+def apply_gaussian_noise(df, std=NOISE_STD):
     noise = np.random.normal(0, std, df.shape)
     return df + noise
 
-def apply_feature_dropout(df, rate=0.3):
+def apply_feature_dropout(df, rate=DROPOUT_RATE):
     mask = np.random.rand(*df.shape) > rate
     return df.where(mask, np.nan).fillna(0)
 

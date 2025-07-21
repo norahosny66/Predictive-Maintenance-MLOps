@@ -39,6 +39,10 @@ def promote_best_model(run_id, acc, model_name, client):
 
 def train_model_main():
     mlflow.set_experiment("bearing_failure_prediction")
+    mlflow.set_tracking_uri("file:/home/predictive_maintenance_project/mlruns")
+
+    print("MLflow tracking URI:", mlflow.get_tracking_uri())
+
     model_name = "bearing-failure-model"
     client = mlflow.tracking.MlflowClient()
 

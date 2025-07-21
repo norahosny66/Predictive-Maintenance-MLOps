@@ -1,4 +1,6 @@
 # src/pipeline.py
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # add project root
 
 from prefect import flow, task
 from src.extract_features import extract_features_main
