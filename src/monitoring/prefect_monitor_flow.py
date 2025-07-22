@@ -10,7 +10,7 @@ from prefect import flow, task
 import pandas as pd
 from pathlib import Path
 from monitoring.drift_check import run_drift
-
+from monitoring.alert import send_teams_alert
 from monitoring.workflow_trigger import trigger_retrain
 
 def load_data(limit=10):
@@ -40,7 +40,7 @@ def monitor_pipeline():
 
     if drift_detected or drift_score > 0.1 :
         print(" Drift detected.")
-
+        send_teams_alert("⚠️ Drift detected! Retraining pipeline started for bearing failure prediction.")
         trigger_retrain()
     else:
         print("✅ No significant drift detected.")

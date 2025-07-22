@@ -1,7 +1,7 @@
 from evidently import Report
 from evidently.metrics import ValueDrift
 import json
-
+import sys, os
 def run_drift(reference_df, current_df, drift_threshold=10):
     metrics = [ValueDrift(column=col) for col in reference_df.columns]
     report = Report(metrics=metrics)
@@ -17,6 +17,10 @@ def run_drift(reference_df, current_df, drift_threshold=10):
 
     avg_drift_score = sum(drift_scores) / len(drift_scores) if drift_scores else 0
     drift_detected = any(score > drift_threshold for score in drift_scores)
+    # Save results for reproducibility
+    os.makedirs("/opt/flows/monitoring_reports", exist_ok=True)
+    with open("/opt/flows/monitoring_reports/drift_result.json", "w") as f:
+        json.dump(result, f, indent=2)
 
     print(f"[DEBUG] Drift scores per sensor: {drift_scores}")
     print(f"[DEBUG] Average Drift Score: {avg_drift_score:.2f} | Threshold: {drift_threshold}")
