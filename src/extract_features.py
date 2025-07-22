@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 
 # Update to match your folder structure
-BASE_DIR = "data/raw/Nasa-Bearing"
+BASE_DIR = "/opt/flows/predictive_maintenance_project/data/raw/Nasa-Bearing"
 TEST_SETS = ["1st_test", "2nd_test", "3rd_test"]
-OUTPUT_FILE = "data/processed/features.csv"
+OUTPUT_FILE = "/opt/flows/predictive_maintenance_project/data/processed/features.csv"
 
 def extract_features_from_file(filepath):
     df = pd.read_csv(filepath, sep=r"\s+", header=None)

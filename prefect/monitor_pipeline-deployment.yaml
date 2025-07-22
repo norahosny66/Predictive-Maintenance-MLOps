@@ -34,7 +34,7 @@ infrastructure:
   _block_type_slug: process
 storage: null
 path: /opt/flows/monitoring
-entrypoint: monitoring/prefect_monitor_flow.py:monitor_pipeline
+entrypoint: monitoring.prefect_monitor_flow:monitor_pipeline
 parameter_openapi_schema:
   title: Parameters
   type: object

@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 
 def load_data():
-    df = pd.read_csv("data/processed/features.csv")
+    df = pd.read_csv("/opt/flows/predictive_maintenance_project/data/processed/features.csv")
     X = df.drop(columns=["filename", "source", "label"], errors='ignore')
     y = df["label"]
     return train_test_split(X, y, test_size=0.2, random_state=42)
@@ -38,9 +38,9 @@ def promote_best_model(run_id, acc, model_name, client):
     print(f"Model v{result.version} promoted to Production")
 
 def train_model_main():
+    
+    mlflow.set_tracking_uri("file:/opt/flows/predictive_maintenance_project/mlruns")
     mlflow.set_experiment("bearing_failure_prediction")
-    mlflow.set_tracking_uri("file:/home/predictive_maintenance_project/mlruns")
-
     print("MLflow tracking URI:", mlflow.get_tracking_uri())
 
     model_name = "bearing-failure-model"

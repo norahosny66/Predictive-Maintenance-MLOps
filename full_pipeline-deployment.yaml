@@ -1,14 +1,15 @@
 ###
-### A complete description of a Prefect Deployment for flow 'monitor-pipeline'
+### A complete description of a Prefect Deployment for flow 'Bearing Failure Prediction Pipeline'
 ###
-name: monitor-pipeline
+name: deployment-pipeline
 description: null
-version: null
+version: ddf3bce2b1f2a63346b83ee76907e3c2
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: default-agent-pool
 tags: []
-parameters: {}
+parameters:
+  start_step: extract
 schedule: null
 schedules: []
 is_schedule_active: null
@@ -17,7 +18,7 @@ infra_overrides: {}
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: monitor-pipeline
+flow_name: Bearing Failure Prediction Pipeline
 manifest_path: null
 infrastructure:
   type: process
@@ -27,20 +28,25 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
-  _block_document_id: f26d9c16-b08c-4551-bc59-d58e6263c1f4
-  _block_document_name: anonymous-0e51cb02-8c72-4949-9b4f-b1662dbd25d9
+  _block_document_id: ef932f29-ef5f-4cf9-b3d2-4da0d12fb0e9
+  _block_document_name: anonymous-7e300f63-505c-450b-9643-a023f7ef54bf
   _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
 storage: null
 path: /opt/flows/predictive_maintenance_project
-entrypoint: src/monitoring/prefect_monitor_flow.py:monitor_pipeline
+entrypoint: src/deployment-pipeline.py:full_pipeline
 parameter_openapi_schema:
   title: Parameters
   type: object
-  properties: {}
+  properties:
+    start_step:
+      default: extract
+      position: 0
+      title: start_step
+      type: string
   required: null
   definitions: null
-timestamp: '2025-07-21T12:25:15.844937+00:00'
+timestamp: '2025-07-22T20:45:53.873246+00:00'
 triggers: []
 enforce_parameter_schema: null

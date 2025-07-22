@@ -1,7 +1,10 @@
 # src/monitoring/prefect_monitor_flow.py
 import sys, os
 # Ensure both original source path and the temp deployment path are covered
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from prefect import flow, task
 import pandas as pd
@@ -9,9 +12,6 @@ from pathlib import Path
 from monitoring.drift_check import run_drift
 
 from monitoring.workflow_trigger import trigger_retrain
-
-from pathlib import Path
-import pandas as pd
 
 def load_data(limit=10):
     # Get first N reference files
