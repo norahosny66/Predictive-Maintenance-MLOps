@@ -53,7 +53,8 @@ test:
 # ------------------------------
 # Runs the registered Prefect deployment (requires Prefect agent running locally).
 train:
-	prefect deployment run 'Bearing Failure Prediction Pipeline/deployment-pipeline'
+	docker exec prefect-prefect-agent-1 prefect deployment run 'Bearing Failure Prediction Pipeline/deployment-pipeline'
+
 
 # ------------------------------
 # FastAPI Service (Local Testing)
