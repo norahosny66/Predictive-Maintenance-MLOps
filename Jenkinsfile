@@ -55,12 +55,14 @@ pipeline {
                     args """
                         -u 0:0 \
                         -v /var/run/docker.sock:/var/run/docker.sock \
-                        --group-add 999 -t
+                        --group-add 999 \
+                        --entrypoint='' -t
                     """
                 }
             }
             steps {
                 sh '''
+                    apk add --no-cache make bash
                     cd repo
                     make train
                 '''
