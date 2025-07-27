@@ -127,11 +127,6 @@ docker compose exec prefect prefect deployment run bearing-prediction/main
 ### 5. Simulate Drift Detection & Retrain
 ```bash
 docker exec -it prefect-prefect-agent-1  bash
-
-prefect deployment build ../flows/monitor_pipeline.py:monitor_pipeline \
-    -n monitor-pipeline \
-    -q default \
-    -o prefect/monitor_pipeline-deployment.yaml
 prefect deployment apply prefect/monitor_pipeline-deployment.yaml
 ```
 This will:
