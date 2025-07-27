@@ -6,7 +6,7 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.10-slim'
-                    args '-u 0:0 -v repo:/repo -v /tmp/pip-cache:/root/.cache/pip'
+                    args '-u 0:0 -t -v repo:/repo -v /tmp/pip-cache:/root/.cache/pip'
                 }
             }
             steps {
@@ -33,7 +33,7 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.10-slim'
-                    args '-u 0:0 -v repo:/repo -v /tmp/pip-cache:/root/.cache/pip'
+                    args '-u 0:0 -t -v repo:/repo -v /tmp/pip-cache:/root/.cache/pip'
                 }
             }
             steps {
@@ -54,7 +54,8 @@ pipeline {
                     image 'docker:24.0-cli'
                     args """
                         -v /var/run/docker.sock:/var/run/docker.sock \
-                        --group-add 999
+                        --group-add 999 \
+                        -t
                     """
                 }
             }
