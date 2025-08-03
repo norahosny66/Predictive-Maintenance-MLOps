@@ -36,8 +36,8 @@ services:
     volumes:
       #- ./:/opt/flows
       - ./start-agent.sh:/opt/flows/start-agent.sh
-      - /home/predictive_maintenance_project:/opt/flows/predictive_maintenance_project
-      - /home/predictive_maintenance_project/src/monitoring/:/opt/flows/monitoring
+      #- /home/predictive_maintenance_project:/opt/flows/predictive_maintenance_project
+      #- /home/predictive_maintenance_project/src/monitoring/:/opt/flows/monitoring
     working_dir: /opt/flows
     depends_on:
       - orion

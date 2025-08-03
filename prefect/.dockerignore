@@ -12,11 +12,18 @@ venv/
 *.h5
 *.zip
 *.log
-data/
 mlruns/
 output/
-output_file/
 notebooks/
 # Ignore Git
 .git/
 .gitignore
+data/
+Terraform/
+.git/
+*.ipynb
+*.log
+*.yaml
+Jenkinsfile
+Makefile
+

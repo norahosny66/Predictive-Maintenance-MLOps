@@ -9,14 +9,19 @@ RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/root/.cache/pip \
     apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && pip install evidently \
+    && pip install evidently awscli boto3 \
     && python -c "from evidently import Report"
 
 
 # Copy your project into the image (so it can be installed)
 # Even though we'll also mount it for development, this ensures
 # the package is installed for Prefect deployments and remote agents.
-COPY . /opt/flows/predictive_maintenance_project
+# Copy only what you need
+RUN mkdir /opt/flows/predictive_maintenance_project
+COPY ./src /opt/flows/predictive_maintenance_project
+COPY ./setup.py  /opt/flows/predictive_maintenance_project
+COPY ./start-agent.sh /opt/flows/predictive_maintenance_project
+
 
 # Set working directory to the project root
 WORKDIR /opt/flows/predictive_maintenance_project
