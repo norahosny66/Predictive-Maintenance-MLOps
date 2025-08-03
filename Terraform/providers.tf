@@ -10,4 +10,4 @@ terraform {
 provider "github" {
   owner = "norahosny66"
   token = "GITHUB_TOKEN" # or `GITHUB_TOKEN`
-}
+} 
