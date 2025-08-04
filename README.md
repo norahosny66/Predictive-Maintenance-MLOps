@@ -1,5 +1,7 @@
 # Predictive Maintenance MLOps Pipeline
 
+![Terraform](https://img.shields.io/badge/Provisioning-Terraform-623CE4?logo=terraform)
+![Ansible](https://img.shields.io/badge/Configuration-Ansible-EE0000?logo=ansible)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Prefect](https://img.shields.io/badge/Orchestration-Prefect-ffb400.svg)
 ![MLflow](https://img.shields.io/badge/Experiment%20Tracking-MLflow-green.svg)
@@ -13,12 +15,15 @@
 This repository implements a **production-grade MLOps pipeline** for **predictive maintenance of rotating machinery (bearings)**, using the [NASA Bearing Dataset](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/).
 
 The project automates:
+- **EC2 &s3 provisioning on AWS** (via Terraform)
+- **EC2 Infra Configuration** (via Ansible)
 - **Model training, tuning, and serving**
 - **Data drift detection** (via [Evidently AI](https://evidentlyai.com/))
 - **Experiment tracking and model registry** (via MLflow)
 - **Workflow orchestration** (via Prefect)
 - **Continuous Integration & Delivery** (via Jenkins)
 - **Alerting via Microsoft Teams**
+
 
 Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready** (AWS/GCP) without Kubernetes.
 
@@ -88,43 +93,54 @@ Drift Detection (Evidently AI) Teams Notifications
 git clone https://github.com/your-username/predictive-maintenance-mlops.git
 cd predictive-maintenance-mlops
 ```
-### 2. Build the Custom Prefect Image
+### 2. ☁️ Provision Infrastructure (Terraform)
+```bash
+cd terraform/
+terraform init
+terraform plan 
+terraform apply
+```
+This will create:
+
+EC2 instance with IAM Role
+
+S3 bucket for model/data storage
+
+Security groups with necessary ports open
+### 3. Update Inventory for Ansible
 
 ```bash
-cd predictive-maintenance-mlops
-docker build -f prefect/Dockerfile -t prefect_image .
+cd ../ansible/
+echo -e "[mlops]\n<your-ec2-public-ip>" > inventory.yml
 ```
-This image includes:
-
-Prefect 2.x with all Python dependencies (MLflow, Evidently, Hyperopt, etc.)
-
-Auto-start configuration for the Prefect agent.
-### 3. Start Services (Prefect + MLflow + Agent)
-Navigate to the prefect directory (where the docker-compose.yml is) and launch:
-
+### 4. ⚙️ Configure EC2 (Ansible)
 ```bash
-cd prefect
-docker compose up -d
+ansible-playbook -i inventory.yml mlflow.yml
+ansible-playbook -i inventory.yml prefect.yml
+ansible-playbook -i inventory.yml jenkins.yml
 ```
-This starts:
+### 5. 📤 Upload Data to S3
 
-Prefect Orion server (workflow orchestration)
-
-Prefect agent (auto-starts to run flows)
-
+### 6. Register & Run Prefect Flow
+Build and apply Prefect deployment:
+```bash
+prefect deployment build pipeline.py:train_and_monitor -n "prod-flow"
+prefect deployment apply train_and_monitor-deployment.yaml
+prefect agent start
+```
+And do the same for monitoring pipeline
 # MLflow tracking server
 
 Access UIs:
 
-Prefect → http://localhost:4200
+Prefect → http://<ec2-ip>:4200
 
-MLflow → http://localhost:5000
+MLflow → http://<ec2-ip>:5000
 
-### 4. Trigger the Training Pipeline
-```bash
-docker compose exec prefect prefect deployment run bearing-prediction/main
-```
-### 5. Simulate Drift Detection & Retrain
+Jenkins → http://<ec2-ip>:8080
+
+
+### Simulate Drift Detection & Retrain
 ```bash
 docker exec -it prefect-prefect-agent-1  bash
 prefect deployment apply prefect/monitor_pipeline-deployment.yaml
@@ -136,4 +152,11 @@ Detect drift (via Evidently AI)
 Trigger retraining
 
 Send a Teams alert (webhook must be configured in your Microsoft Teams and edited in alert.py )
+
+
+## 🙋‍♀️ Maintainer
+
+**Noura Hosny**  
+SRE | Cloud & Automation Enthusiast  
+📧 Feel free to reach out for collaboration.
 
