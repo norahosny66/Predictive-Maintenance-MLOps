@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    environment:
+      MLFLOW_TRACKING_URI: http://0.0.0.0:5000
+      MLFLOW_S3_ENDPOINT_URL: https://s3.amazonaws.com
+      BACKEND_STORE_URI: postgresql://mlflow:mlflowpass@db:5432/mlflow_db
+      ARTIFACT_ROOT: s3://mlops-project-artifacts-noura/mlflow/
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:14
+    container_name: mlflow_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflowpass
+      POSTGRES_DB: mlflow_db
+    volumes:
+      - mlflow_pgdata:/var/lib/postgresql/data
+
+volumes:
+  mlflow_pgdata:
