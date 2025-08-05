@@ -3,7 +3,7 @@ version: '3.8'
 services:
   jenkins:
     image: noura039/custom-jenkins:lts
-      
+    restart: unless-stopped
     user: root
     ports:
       - "8080:8080"
