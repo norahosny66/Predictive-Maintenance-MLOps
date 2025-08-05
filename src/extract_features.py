@@ -1,14 +1,36 @@
 import os
+import boto3
 import pandas as pd
 import numpy as np
+from io import BytesIO, StringIO
 
-# Update to match your folder structure
-BASE_DIR = "/opt/flows/predictive_maintenance_project/data/raw/Nasa-Bearing"
+# Configuration
+S3_BUCKET = "mlops-project-artifacts-noura"
+S3_PREFIX = "dataset/raw/Nasa-Bearing"
 TEST_SETS = ["1st_test", "2nd_test", "3rd_test"]
-OUTPUT_FILE = "/opt/flows/predictive_maintenance_project/data/processed/features.csv"
+S3_OUTPUT_PATH = "dataset/processed/features.csv"
 
-def extract_features_from_file(filepath):
-    df = pd.read_csv(filepath, sep=r"\s+", header=None)
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+def read_s3_file(bucket: str, key: str) -> pd.DataFrame:
+    """
+    Download a text file from S3 and load it into a pandas DataFrame.
+    Assumes whitespace-separated values with no header.
+    """
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    return pd.read_csv(
+        BytesIO(obj['Body'].read()),
+        sep=r"\s+",
+        header=None
+    )
+
+def extract_features_from_df(df: pd.DataFrame) -> dict:
+    """
+    Given a DataFrame of signal data (columns as separate signals),
+    compute statistical features for each column.
+    Returns a dict of feature name → value.
+    """
     features = {}
     for col in df.columns:
         signal = df[col]
@@ -20,35 +42,46 @@ def extract_features_from_file(filepath):
         features[f"peak_{col}"] = signal.max()
     return features
 
-def  extract_features_main():
-    feature_rows = []
-    for test_set in TEST_SETS:
-        folder_path = os.path.join(BASE_DIR, test_set, test_set)
-        files = sorted(os.listdir(folder_path))
-        for fname in files:
-            path = os.path.join(folder_path, fname)
-            if not os.path.isfile(path):
-                continue
-            try:
-                features = extract_features_from_file(path)
-                features["filename"] = fname
-                features["source"] = test_set
-                feature_rows.append(features)
-            except Exception as e:
-                print(f"Skipped file {fname} due to error: {e}")
 
+def extract_features_main():
+    feature_rows = []
+
+    for test_set in TEST_SETS:
+        prefix = f"{S3_PREFIX}/{test_set}/{test_set}/"
+        paginator = s3.get_paginator('list_objects_v2')
+        page_iterator = paginator.paginate(Bucket=S3_BUCKET, Prefix=prefix)
+
+        for page in page_iterator:
+            for obj in page.get('Contents', []):
+                key = obj['Key']
+                if key.endswith('/'):
+                    continue
+                try:
+                    df = read_s3_file(S3_BUCKET, key)
+                    features = extract_features_from_df(df)
+                    features['filename'] = os.path.basename(key)
+                    features['source'] = test_set
+                    feature_rows.append(features)
+                except Exception as e:
+                    print(f"Skipped file {key} due to error: {e}")
+
+    # Build DataFrame
     features_df = pd.DataFrame(feature_rows)
 
-    # Label last 10% of files in each set as "failure"
-    features_df["label"] = 0
+    # Label last 10% of files in each set as failure
+    features_df['label'] = 0
     for test_set in TEST_SETS:
-        idx = features_df[features_df["source"] == test_set].index
+        idx = features_df[features_df['source'] == test_set].index.tolist()
         cutoff = int(len(idx) * 0.9)
-        failure_idx = idx[cutoff:]
-        features_df.loc[failure_idx, "label"] = 1
+        for i in idx[cutoff:]:
+            features_df.at[i, 'label'] = 1
 
-    features_df.to_csv(OUTPUT_FILE, index=False)
-    print(f" Saved features for {len(features_df)} files → {OUTPUT_FILE}")
+    # Write features to S3
+    csv_buffer = StringIO()
+    features_df.to_csv(csv_buffer, index=False)
+    s3.put_object(Bucket=S3_BUCKET, Key=S3_OUTPUT_PATH, Body=csv_buffer.getvalue())
+    print(f"Saved features for {len(features_df)} files to s3://{S3_BUCKET}/{S3_OUTPUT_PATH}")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     extract_features_main()
