@@ -33,11 +33,13 @@ services:
     restart: always
     environment:
       - PREFECT_API_URL=http://orion:4200/api
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
       #- ./:/opt/flows
       - ./start-agent.sh:/opt/flows/start-agent.sh
-      #- /home/predictive_maintenance_project:/opt/flows/predictive_maintenance_project
-      #- /home/predictive_maintenance_project/src/monitoring/:/opt/flows/monitoring
+      - /home/predictive_maintenance_project/mlruns:/opt/flows/predictive_maintenance_project/mlruns
+      - /home/predictive_maintenance_project/src:/opt/flows/predictive_maintenance_project/src
     working_dir: /opt/flows
     depends_on:
       - orion
