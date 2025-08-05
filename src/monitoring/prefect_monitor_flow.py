@@ -36,8 +36,8 @@ def load_data_from_s3(limit=MAX_FILES):
     cur_objects = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=CURRENT_PREFIX).get("Contents", [])
 
     # Filter only .txt files
-    ref_keys = [obj["Key"] for obj in ref_objects if obj["Key"].endswith(".txt")][:limit]
-    cur_keys = [obj["Key"] for obj in cur_objects if obj["Key"].endswith(".txt")]
+    ref_keys = [obj["Key"] for obj in ref_objects][:limit]
+    cur_keys = [obj["Key"] for obj in cur_objects]
 
     print(f"[DEBUG] Found {len(ref_keys)} reference files and {len(cur_keys)} current files.")
 
