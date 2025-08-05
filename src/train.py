@@ -1,77 +1,103 @@
+import os
+import boto3
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+from io import BytesIO, StringIO
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 
-def load_data():
-    df = pd.read_csv("/opt/flows/predictive_maintenance_project/data/processed/features.csv")
+# Configuration
+S3_BUCKET = "mlops-project-artifacts-noura"
+FEATURES_KEY = "dataset/processed/features.csv"
+#MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+mlflow.set_tracking_uri("http://3.215.80.166:5050")
+MLFLOW_EXPERIMENT = "bearing_failure_prediction"
+MODEL_NAME = "bearing-failure-model"
+
+# Initialize S3 and MLflow
+s3 = boto3.client("s3")
+#mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+mlflow.set_experiment(MLFLOW_EXPERIMENT)
+client = mlflow.tracking.MlflowClient()
+
+
+def load_data_from_s3(bucket: str, key: str):
+    """
+    Download features.csv from S3 into a pandas DataFrame.
+    """
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    df = pd.read_csv(BytesIO(obj["Body"].read()))
+    # Split into X, y
     X = df.drop(columns=["filename", "source", "label"], errors='ignore')
     y = df["label"]
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
-def train_and_log_model(X_train, X_test, y_train, y_test, depth):
-    clf = RandomForestClassifier(n_estimators=100, max_depth=depth, random_state=42)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
 
-    mlflow.log_param("max_depth", depth)
-    mlflow.log_metric("accuracy", acc)
-    mlflow.sklearn.log_model(clf, "model")
+def train_and_log_model(X_train, X_test, y_train, y_test, max_depth: int):
+    """
+    Train RandomForestClassifier, log parameters, metrics, and model artifact to MLflow.
+    """
+    with mlflow.start_run() as run:
+        clf = RandomForestClassifier(n_estimators=100, max_depth=max_depth, random_state=42)
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
 
-    print(f"Trained model with depth={depth} → accuracy={acc:.4f}")
-    return acc, clf
+        # Log to MLflow
+        mlflow.log_param("max_depth", max_depth)
+        mlflow.log_metric("accuracy", acc)
+        mlflow.sklearn.log_model(clf, artifact_path="model", registered_model_name=MODEL_NAME)
 
-def promote_best_model(run_id, acc, model_name, client):
-    result = mlflow.register_model(
-        model_uri=f"runs:/{run_id}/model",
-        name=model_name
-    )
-    client.set_model_version_tag(
-        name=model_name,
-        version=result.version,
-        key="deployment_stage",
-        value="production"
-    )
-    print(f"Model v{result.version} promoted to Production")
+        print(f"Trained depth={max_depth}, accuracy={acc:.4f} (run_id={run.info.run_id})")
+        return run.info.run_id, acc
+
+
+def promote_if_best(best_run_id: str, best_acc: float):
+    """
+    Compare best model accuracy with current production stage, and promote if improved.
+    """
+    # Attempt to get existing production model
+    try:
+        prod_versions = client.get_latest_versions(MODEL_NAME, stages=["Production"])
+        if prod_versions:
+            prod_run_id = prod_versions[0].run_id
+            prod_acc = float(client.get_run(prod_run_id).data.metrics.get("accuracy", 0))
+            print(f"Current Production accuracy: {prod_acc:.4f} (run {prod_run_id})")
+        else:
+            prod_acc = 0
+            print("No model in Production stage yet.")
+    except Exception as e:
+        prod_acc = 0
+        print(f"Could not fetch Production model info: {e}")
+
+    if best_acc > prod_acc:
+        client.transition_model_version_stage(
+            name=MODEL_NAME,
+            version=client.get_latest_versions(MODEL_NAME, stages=["None"])[-1].version,
+            stage="Production",
+            archive_existing_versions=True
+        )
+        print(f"Promoted run {best_run_id} to Production stage.")
+    else:
+        print("Best model did not improve, no promotion performed.")
+
 
 def train_model_main():
-    
-    mlflow.set_tracking_uri("file:/opt/flows/predictive_maintenance_project/mlruns")
-    mlflow.set_experiment("bearing_failure_prediction")
-    print("MLflow tracking URI:", mlflow.get_tracking_uri())
-
-    model_name = "bearing-failure-model"
-    client = mlflow.tracking.MlflowClient()
-
-    X_train, X_test, y_train, y_test = load_data()
-    best_acc = 0
+    X_train, X_test, y_train, y_test = load_data_from_s3(S3_BUCKET, FEATURES_KEY)
+    best_acc = 0.0
     best_run_id = None
 
     for depth in [5, 10, 15]:
-        with mlflow.start_run() as run:
-            acc, _ = train_and_log_model(X_train, X_test, y_train, y_test, depth)
-            if acc > best_acc:
-                best_acc = acc
-                best_run_id = run.info.run_id
+        run_id, acc = train_and_log_model(X_train, X_test, y_train, y_test, depth)
+        if acc > best_acc:
+            best_acc = acc
+            best_run_id = run_id
 
-    print(f"\nBest model accuracy: {best_acc:.4f} from run {best_run_id}")
+    print(f"Best run: {best_run_id} with accuracy {best_acc:.4f}")
+    promote_if_best(best_run_id, best_acc)
 
-    try:
-        prod_model = client.get_latest_versions(model_name, stages=["Production"])[0]
-        prod_acc = float(client.get_run(prod_model.run_id).data.metrics.get("accuracy", 0))
-        print(f"Current Production accuracy: {prod_acc:.4f}")
-    except:
-        prod_acc = 0
-        print("No existing Production model found.")
-
-    if best_acc > prod_acc:
-        print("Registering and promoting best model to Production...")
-        promote_best_model(best_run_id, best_acc, model_name, client)
-    else:
-        print("Best model not better than Production — skipping promotion.")
 
 if __name__ == "__main__":
     train_model_main()
