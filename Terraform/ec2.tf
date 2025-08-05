@@ -11,6 +11,26 @@ resource "aws_security_group" "ssh" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port   = 5000
+    to_port     = 5050
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 4200
+    to_port     = 4200
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -39,10 +59,13 @@ resource "aws_instance" "mlops_vm" {
   instance_type = "t2.micro"
   key_name      = "Master"
   vpc_security_group_ids = [aws_security_group.ssh.id]
-  
+  iam_instance_profile = aws_iam_instance_profile.mlflow_instance_profile.name
 
+  #lifecycle {
+  #  prevent_destroy = true
+  #}
   associate_public_ip_address = false 
-
+  
   tags = {
     Name = "mlops-instance"
   }
