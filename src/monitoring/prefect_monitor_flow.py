@@ -16,7 +16,7 @@ from monitoring.workflow_trigger import trigger_retrain
 
 # --- Configuration ---
 BUCKET_NAME = "mlops-project-artifacts-noura"
-REFERENCE_PREFIX = "dataset/raw/Nasa-Bearing/1st_test/"
+REFERENCE_PREFIX = "dataset/raw/Nasa-Bearing/1st_test/1st_test/"
 CURRENT_PREFIX = "dataset/drifted/1st_test/"
 MAX_FILES = 10
 
