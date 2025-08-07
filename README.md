@@ -13,20 +13,6 @@
 ## Overview
 
 This repository implements a **production-grade MLOps pipeline** for **predictive maintenance of rotating machinery (bearings)**, using the [NASA Bearing Dataset](https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/).
-
-The project automates:
-- **EC2 &s3 provisioning on AWS** (via Terraform)
-- **EC2 Infra Configuration** (via Ansible)
-- **Model training, tuning, and serving**
-- **Data drift detection** (via [Evidently AI](https://evidentlyai.com/))
-- **Experiment tracking and model registry** (via MLflow)
-- **Workflow orchestration** (via Prefect)
-- **Continuous Integration & Delivery** (via Jenkins)
-- **Alerting via Microsoft Teams**
-
-
-Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready** (AWS/GCP) without Kubernetes.
-
 ---
 
 ## Problem Statement
@@ -46,51 +32,127 @@ Predict failures **before they happen** by:
 4. Triggering **retraining and alerts** when model reliability drops.
 
 ---
+## 🔍 Solution Architecture
 
-## Solution Architecture
-
-### Workflow
-
-             ┌──────────────────────────┐
-             │   Raw Sensor Data (CSV)  │
-             └──────────────┬───────────┘
-                            │
-                            ▼
-                 Data Preprocessing & Splits
-                            │
-                            ▼
-     ┌────────────────────────────────────────────┐
-     │     Model Training & Hyperparameter Tuning │
-     │      (RandomForestRegressor + Hyperopt)    │
-     └───────────────────┬────────────────────────┘
-                         │
-                 Logs Metrics & Artifacts
-                         │
-                         ▼
-               MLflow Tracking & Registry
-                         │
-                         ▼
-    ┌─────────────────────────────┐
-    │   FastAPI Model Serving     │
-    │ (Production-tagged Model)   │
-    └───────────────┬─────────────┘
-                    │
-┌────────────────────┴─────────────────────┐
-│ │
-▼ ▼
-Drift Detection (Evidently AI) Teams Notifications
-│ │
-│ Drift > Threshold? │
-└───────────────Yes───────────────► Retrain Trigger (Prefect Flow)
-
+```mermaid
+graph TD
+    A[NASA Bearing Dataset] --> B[Terraform AWS Provisioning]
+    B --> C[EC2 + S3 + IAM Roles]
+    C --> D[Ansible Configuration]
+    D --> E[Custom Docker Images]
+    E --> F[Prefect Orchestration]
+    F --> G[MLflow Tracking]
+    G --> H[FastAPI Serving]
+    H --> I[Evidently AI Monitoring]
+    I --> J{Drift Detected?}
+    J -- Yes --> K[Teams Alert]
+    J -- Yes --> L[Auto-Retrain]
+    J -- No --> M[Continuous Monitoring]
+    L --> F
+```
+Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready** (AWS/GCP) without Kubernetes.
 
 ---
+📂 Repository Structure
+```bash
+├── .gitignore
+├── Jenkinsfile
+├── Makefile
+├── README.md
+├── Terraform
+│   ├── backends.tf
+│   ├── ec2.tf
+│   ├── iam.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── providers.tf
+│   ├── s3.tf
+│   ├── state
+│   │   ├── terraform.tfstate
+│   │   └── terraform.tfstate.backup
+│   └── variables.tf
+├── ansible
+│   ├── inventory
+│   │   └── hosts.ini
+│   ├── jenkins
+│   │   ├── Dockerfile
+│   │   ├── docker-compose-jenkins.yml
+│   │   ├── dockerpermissions.yml
+│   │   └── jenkins.yml
+│   ├── mlflow
+│   │   ├── docker-compose-mlflow.yml
+│   │   └── mlflow.yml
+│   └── prefect
+│       ├── docker-compose-prefect.yml
+│       ├── prefect.yml
+│       ├── start-agent.sh
+│       └── start-agent.sh:Zone.Identifier
+├── data
+│   ├── drifted
+│   │   └── 1st_test
+│   ├── processed
+│   │   └── features.csv
+│   └── raw
+│       └── Nasa-Bearing
+│           ├── 1st_test
+│           ├── 2st_test
+│           ├── 3rd_test
+│           └── Readme Document for IMS Bearing Data.pdf
+├── full_pipeline-deployment.yaml
+├── mlruns
+├── notebooks
+│   ├── .ipynb_checkpoints
+│   │   └── eda_features-checkpoint.ipynb
+│   └── eda_features.ipynb
+├── prefect
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── monitor_pipeline-deployment.yaml
+│   └── start-agent.sh
+├── setup.py
+└── src
+    ├── deployment-pipeline.py
+    ├── extract_features.py
+    ├── full_pipeline-deployment.yaml
+    ├── monitoring
+    │   ├── alert.py
+    │   ├── drift_check.py
+    │   ├── prefect_monitor_flow.py
+    │   ├── simulate_drifting.py
+    │   └── workflow_trigger.py
+    ├── serving
+    │   ├── app.py
+    │   └── input_example.json
+    └── train.py
+```
+## 🌟 Key Features
+
+### 🚀 Infrastructure Automation
+- **Terraform-provisioned EC2 on AWS** with Elastic IP  
+- **S3 bucket** for data/model storage  
+- **IAM roles** for secure S3 access  
+- **Security groups** with least-privilege ports  
+
+### 🐳 Custom Docker Images
+- `prefect-agent-custom`: Pre-loaded with Python 3.10 + dependencies  
+- `jenkins`: Handle permissions to use separate docker containers as agents for CI/CD pipelines  
+
+### 🔁 ML Lifecycle Management
+- **Hyperparameter tuning** with Hyperopt  
+- **Model versioning** in MLflow Registry  
+- **Automated retraining triggers**  
+- **Data drift detection** with Evidently AI  
+
+### 🔧 CI/CD & Monitoring
+- **Jenkins pipelines** for deployment and training
+- **Microsoft Teams alert** integration  
+- **Prefect dashboard** for workflow monitoring  
 
 ## Quickstart
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/predictive-maintenance-mlops.git
+git clone https://github.com/norahosny66/predictive-maintenance-mlops.git
 cd predictive-maintenance-mlops
 ```
 ### 2. ☁️ Provision Infrastructure (Terraform)
@@ -133,11 +195,11 @@ And do the same for monitoring pipeline
 
 Access UIs:
 
-Prefect → http://<ec2-ip>:4200
+Prefect → http://<EC2_IP>:4200
 
-MLflow → http://<ec2-ip>:5000
+MLflow → http://<EC2_IP>:5000
 
-Jenkins → http://<ec2-ip>:8080
+Jenkins → http://<EC2_IP>:8080
 
 
 ### Simulate Drift Detection & Retrain
@@ -151,12 +213,21 @@ Detect drift (via Evidently AI)
 
 Trigger retraining
 
-Send a Teams alert (webhook must be configured in your Microsoft Teams and edited in alert.py )
+## 📣 Teams Alert Configuration
+
+1. **Create an incoming webhook** in your Microsoft Teams channel  
+   - Go to your channel → **Connectors** → **Incoming Webhook** → Generate URL
+
+2. **Update `src/alert.py`** with your webhook URL:
+
+   ```python
+   WEBHOOK_URL = "https://outlook.office.com/webhook/..."
+
 
 
 ## 🙋‍♀️ Maintainer
 
 **Noura Hosny**  
 SRE | Cloud & Automation Enthusiast  
-📧 Feel free to reach out for collaboration.
+💼 [LinkedIn Profile](https://www.linkedin.com/in/nourahosny81231/)
 
