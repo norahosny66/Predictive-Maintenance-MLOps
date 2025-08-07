@@ -50,7 +50,6 @@ graph TD
     J -- No --> M[Continuous Monitoring]
     L --> F
 ```
-Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready** (AWS/GCP) without Kubernetes.
 
 ---
 📂 Repository Structure
@@ -138,7 +137,7 @@ Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready*
 - `jenkins`: Handle permissions to use separate docker containers as agents for CI/CD pipelines  
 
 ### 🔁 ML Lifecycle Management
-- **Hyperparameter tuning** with Hyperopt  
+- **workflow orchestration** using prefect
 - **Model versioning** in MLflow Registry  
 - **Automated retraining triggers**  
 - **Data drift detection** with Evidently AI  
@@ -146,8 +145,13 @@ Runs entirely on a **local VM (Docker-based)** but is built to be **cloud-ready*
 ### 🔧 CI/CD & Monitoring
 - **Jenkins pipelines** for deployment and training
 - **Microsoft Teams alert** integration  
-- **Prefect dashboard** for workflow monitoring  
+- **Prefect dashboard** for workflow monitoring
+- 
+### 🚀 FastAPI Model Serving
 
+**Minimal production API** that auto-serves the latest production model from MLflow registry 
+
+```python
 ## Quickstart
 
 ### 1. Clone the Repository
@@ -222,7 +226,13 @@ Trigger retraining
 
    ```python
    WEBHOOK_URL = "https://outlook.office.com/webhook/..."
-
+   
+## FastAPI Model Serving
+```bash
+uvicorn api:app --reload  # Dev
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker api:app  # Prod
+```
+Access: http://localhost:8000/docs
 
 
 ## 🙋‍♀️ Maintainer
