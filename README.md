@@ -151,7 +151,6 @@ graph TD
 
 **Minimal production API** that auto-serves the latest production model from MLflow registry 
 
-```python
 ## Quickstart
 
 ### 1. Clone the Repository
