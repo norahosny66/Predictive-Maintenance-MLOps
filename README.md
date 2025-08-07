@@ -197,7 +197,7 @@ Access UIs:
 
 Prefect → http://<EC2_IP>:4200
 
-MLflow → http://<EC2_IP>:5000
+MLflow → http://<EC2_IP>:5050
 
 Jenkins → http://<EC2_IP>:8080
 
