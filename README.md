@@ -224,7 +224,7 @@ Trigger retraining
 2. **Update `src/alert.py`** with your webhook URL:
 
    ```python
-   WEBHOOK_URL = "https://outlook.office.com/webhook/..."
+   WEBHOOK_URL = "https://..."
    
 ## FastAPI Model Serving
 ```bash
